@@ -7,24 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class Invitado extends Model
 {
-    use HasFactory;
+   use HasFactory;
 
-    protected $cast = [
-        'Status' => 'boolean',
-    ];
+   protected $cast = [
+      'Status' => 'boolean',
+   ];
 
-    protected $fillable = [
-        'user_id',
-        'Nombre',
-        'Apellidos',
-        'Telefono',
-        'TipoDocumento',
-        'Documento',
-        'Status',
-    ];
+   protected $fillable = [
+      'user_id',
+      'Nombre',
+      'Apellidos',
+      'Telefono',
+      'TipoDocumento',
+      'Documento',
+      'imagen',
+      'Status',
+   ];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+   public function user()
+   {
+      return $this->belongsTo(User::class);
+   }
 }

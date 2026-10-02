@@ -25,7 +25,7 @@ class SolicitudesService
 
       $searchTerms = $search ? preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) : [];
 
-      $solicitudes = Solicitudes::with(['user.asociado', 'user.adherente'])
+      $solicitudes = Solicitudes::with(['user.asociado', 'user.adherente', 'user.familiar'])
          ->when(!empty($searchTerms), function ($query) use ($searchTerms) {
             $query->where(function ($query) use ($searchTerms) {
                $query->whereHas('user.asociado', function ($q) use ($searchTerms) {
@@ -48,7 +48,17 @@ class SolicitudesService
                         });
                      }
                   });
-            });
+            })
+               ->orWhereHas('user.familiar', function ($q) use ($searchTerms) {
+                  foreach ($searchTerms as $term) {
+                     $q->where(function ($subQuery) use ($term) {
+                        $subQuery
+                           ->whereRaw("CONCAT(Nombre, ' ', Apellidos) LIKE ?", ["%{$term}%"])
+                           ->orWhere('Nombre', 'like', "%{$term}%")
+                           ->orWhere('Apellidos', 'like', "%{$term}%");
+                     });
+                  }
+               });
          })
          ->when(
             array_key_exists('state', $filters) && $state !== null && $state !== '',
@@ -70,6 +80,10 @@ class SolicitudesService
 
             if ((int) $user->Rol === 3 && $user->adherente) {
                $usuario = $user->adherente->withoutRelations();
+            }
+
+            if ((int) $user->Rol === 5 && $user->familiar) {
+               $usuario = $user->familiar->withoutRelations();
             }
 
             if ($usuario) {

@@ -72,7 +72,7 @@ class ReservasService
       $search = isset($filters['search']) ? trim($filters['search']) : null;
       $searchTerms = $search ? preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) : [];
 
-      $reservas = Reservas::with(['user.asociado', 'user.adherente', 'espacio'])
+      $reservas = Reservas::with(['user.asociado', 'user.adherente', 'user.familiar', 'espacio'])
          ->when(!empty($searchTerms), function ($query) use ($searchTerms) {
             $query->where(function ($query) use ($searchTerms) {
                $query->whereHas('user.asociado', function ($q) use ($searchTerms) {
@@ -85,6 +85,15 @@ class ReservasService
                      });
                   }
                })->orWhereHas('user.adherente', function ($q) use ($searchTerms) {
+                  foreach ($searchTerms as $term) {
+                     $q->where(function ($subQuery) use ($term) {
+                        $subQuery
+                           ->whereRaw("CONCAT(Nombre, ' ', Apellidos) LIKE ?", ["%{$term}%"])
+                           ->orWhere('Nombre', 'like', "%{$term}%")
+                           ->orWhere('Apellidos', 'like', "%{$term}%");
+                     });
+                  }
+               })->orWhereHas('user.familiar', function ($q) use ($searchTerms) {
                   foreach ($searchTerms as $term) {
                      $q->where(function ($subQuery) use ($term) {
                         $subQuery
@@ -114,6 +123,10 @@ class ReservasService
 
             if ((int) $user->Rol === 3 && $user->adherente) {
                $usuario = $user->adherente->withoutRelations();
+            }
+
+            if ((int) $user->Rol === 5 && $user->familiar) {
+               $usuario = $user->familiar->withoutRelations();
             }
 
             if ($usuario) {
